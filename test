@@ -1,0 +1,238 @@
+import json
+from sdv.datasets.demo import download_demo
+from sdv.datasets.demo import get_available_demos
+from sdv.multi_table import HMASynthesizer
+from sdv.evaluation.multi_table import DiagnosticReport
+from sdv.evaluation.multi_table import run_diagnostic
+from sdv.evaluation.multi_table import evaluate_quality
+from sdv.evaluation.multi_table import get_column_plot
+from sqlalchemy import create_engine
+from sqlalchemy import text
+from sdv.metadata import MultiTableMetadata
+import datetime
+from urllib.parse import quote
+import pandas as pd
+import pymysql
+
+
+import time
+import os
+#get_available_demos(modality='multi_table')
+import streamlit as st
+import pandas as pd
+
+st.title("Synthetic Data Generation Using SDV")
+
+user_option=st.radio("Select an option",["***Model Training***","***Generate Data***","***Model Metrics***"],captions=["Train the model on the given DB","Generate Data based on the Model","Model evaluation metrics"],horizontal=True)
+proc_button = st.button('Proceed')
+if st.session_state.get('button') != True:
+    st.session_state['button'] = proc_button
+
+if st.session_state['button'] == True:
+    if(user_option=='***Model Training***'):
+        db_name=st.selectbox("Select the table",("fake_hotels", "world_v1", "Biodegradability_v1","GCP"))
+        
+        if (db_name=="GCP"):
+            host=st.text_input("Host","35.188.180.60")
+            user=st.text_input("UserName","admin")
+            password=st.text_input("Password",type='password')
+            db_nm=st.text_input("Database")
+            db_connection_str = 'mysql+pymysql://' +user + ':' +quote(password) +'@'+ host + '/'+ db_nm +''
+            db_connection = create_engine(db_connection_str)
+
+        print("tg")
+        if st.button("Create Model"):
+            print("h")
+            st.session_state['button'] = False
+            percent_complete=0
+            progress_text = "Fetching the data from database. Please wait."
+            my_bar = st.progress(0, text=progress_text)
+            if (db_name=="GCP"):
+                df = pd.read_sql("SELECT table_name FROM information_schema.tables  WHERE table_schema = '" + db_nm + "';", con=db_connection)
+               # print(df)
+                real_data = {}
+                tables = df['TABLE_NAME'].values.tolist()
+                print(tables)
+                for table in tables:
+                    df = pd.read_sql(f"SELECT * FROM {table};", con=db_connection)
+                    real_data[table] = df
+                metadata = MultiTableMetadata()
+                metadata.detect_from_dataframes(real_data)
+                ed_met=st.text_area("Metadata",metadata)
+                if (db_nm=="testMember"):
+                    metadata.update_column(table_name='members',
+                        column_name='memberName',
+                        sdtype='name',
+                        pii=True
+                        )
+                    metadata.update_column(table_name='provider',
+                        column_name='facilityName',
+                        sdtype='bs')
+                    metadata.update_column(table_name='provider',
+                        column_name='address',
+                        sdtype='street_address',
+                        pii=True)
+                    metadata.update_column(table_name='ratings',
+                        column_name='facilityName',
+                        sdtype='bs')
+                    metadata.update_column(table_name='ratings',
+                        column_name='feedbackComment',
+                        sdtype='text')
+            else:
+                real_data, metadata = download_demo(
+                    modality='multi_table',
+                    dataset_name=db_name
+                )
+            my_bar.progress(10, text="Retrieved details. Plotting Table Structure...")
+            time.sleep(2)
+            with st.container(height=500,border=True):
+                st.write("Table Structure")
+                st.graphviz_chart(metadata.visualize(show_table_details='full'))
+            my_bar.progress(30, text="Retrieved details. Initiating Model Training")
+            time.sleep(2)
+            synthesizer = HMASynthesizer(metadata,locales=['en_US'])
+            my_bar.progress(50, text="Model Training in progress")
+            synthesizer.fit(real_data)
+            my_bar.progress(80, text="Training completed. Saving the Model...")
+            time.sleep(2)
+            synthesizer.save(filepath=f"Models/{db_name}_model.pkl")
+            my_bar.progress(80, text="Training Completed! Evaluating Model")
+            #st.info("Training is completed")
+            st.toast(f"Models {db_name}_model.pkl is stored", icon='⬇️')
+            #Evaluating the model
+            synthetic_data = synthesizer.sample(scale=1)
+            #diag_report = DiagnosticReport()
+            #qual_report = QualityReport()
+            my_bar.progress(90, text="Genrating diagnostic report")
+            time.sleep(2)   
+            diag_report=run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
+            #diag_report.generate(real_data, synthetic_data, metadata)
+            diag_report.save(filepath=f"Reports/{db_name}_diagnostic_report.pkl")
+            my_bar.progress(95, text="Generating quality report")
+            #qual_report.generate(real_data, synthetic_data, metadata)
+            qual_report=evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)            
+            qual_report.save(filepath=f"Reports/{db_name}_quality_report.pkl")   
+            my_bar.progress(100, text="Completed")
+            st.write("Diagnostic Score")
+            diag_score=diag_report.get_properties()  
+            diag_score['Score']  =diag_score['Score'].apply(lambda x: x*100)
+            st.write(diag_score)
+            st.write("Quality Score")
+            qual_score=qual_report.get_properties()
+            #qual_score=pd.concat(qual_score_d.values(), ignore_index=True)  
+            qual_score['Score']  =qual_score['Score'].apply(lambda x: x*100)
+            st.write(qual_score)
+            st.info("Check the metrics section for detailed comparison")
+            st.write(f"***Real column vs Synthetic column***")
+            
+            fig = get_column_plot(
+                    real_data=real_data,
+                    synthetic_data=synthetic_data,
+                    metadata=metadata,
+                    table_name='ratings',
+                    column_name='rating',
+                    plot_type='distplot'                   
+                )
+            st.write(fig)
+            # fig = get_column_plot(
+            #         real_data=real_data,
+            #         synthetic_data=synthetic_data,
+            #         metadata=metadata,
+            #         table_name='hotels',
+            #         column_name='classification'                        
+            #     )
+            # st.write(fig)
+            
+    elif(user_option=='***Generate Data***'):
+        model_list=os.listdir("Models")
+        model_name=st.selectbox("Select the Model",model_list)
+        dat_multi=st.text_input("Enter the multiplier for synthetic data")
+        print("start time:")
+        print(datetime.datetime.now())
+        if st.button("Generate Synthetic Data"):            
+            st.session_state['button'] = False
+            synthesizer=HMASynthesizer.load(filepath=f"Models/{model_name}")
+            synthetic_data = synthesizer.sample(scale=float(dat_multi))
+            tab_names = list(synthetic_data.keys())
+            tabs = st.tabs(tab_names)
+            for i, (table_name, df) in enumerate(synthetic_data.items(), start=0):
+                with tabs[i]:
+                    st.write(f"{table_name} Data:")
+                    st.dataframe(df)
+        print("end time:")
+        print(datetime.datetime.now())
+    else:
+        model_list=os.listdir("Models")
+        model_name=st.selectbox("Select the Model",model_list)
+        if st.button("View Report"):
+            st.session_state['button'] = False
+            db_name=model_name.replace("_model.pkl","")
+            d_tab, qual_tab=st.tabs(["Diagnostic Report","Quality Report"])
+            synthesizer=HMASynthesizer.load(filepath=f"Models/{model_name}")
+            parsed_data = json.loads(str(synthesizer.get_metadata()))
+            tables_list = list(parsed_data['tables'].keys())
+            with d_tab:
+                d_report = DiagnosticReport.load(f"Reports/{db_name}_diagnostic_report.pkl")
+                diag_score=d_report.get_properties()  
+                diag_score['Score']  =diag_score['Score'].apply(lambda x: x*100)
+                st.write(diag_score)
+                dv,rv=st.tabs(["Data Validity","Relationship Validity"])
+                with dv:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = d_report.get_visualization(
+                                property_name='Data Validity',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                with rv:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = d_report.get_visualization(
+                                property_name='Relationship Validity',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                
+            with qual_tab:
+                q_report = DiagnosticReport.load(f"Reports/{db_name}_quality_report.pkl")
+                qual_score=q_report.get_properties()  
+                qual_score['Score']  =qual_score['Score'].apply(lambda x: x*100)
+                st.write(qual_score)
+                cs,cpt,card,it=st.tabs(['Column Shapes', 'Column Pair Trends', 'Cardinality','Intertable Trends'])
+                with cs:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = q_report.get_visualization(
+                                property_name='Column Shapes',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                with cpt:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = q_report.get_visualization(
+                                property_name='Column Pair Trends',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                with card:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = q_report.get_visualization(
+                                property_name='Cardinality',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                with it:
+                    for tab_name in tables_list:
+                        st.write(   f"***Table: {tab_name}***")
+                        fig = q_report.get_visualization(
+                                property_name='Intertable Trends',
+                                table_name=tab_name
+                            )
+                        st.write(fig)
+                        
+ 
+            
+            

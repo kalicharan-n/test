@@ -1,0 +1,71 @@
+import sqlite3
+from faker import Faker
+
+fake = Faker()
+
+# Function to generate realistic data
+def generate_realistic_data():
+    first_name = fake.first_name()
+    last_name = fake.last_name()
+    gender = fake.random_element(["Male", "Female"])
+    ethnicity = fake.random_element(["White", "Black or African American", "Asian", "Hispanic or Latino", "Native American", "Other"])
+    address = fake.street_address()
+    city = fake.city()
+    state = fake.state_abbr()
+    zip_code = fake.zipcode()
+    phone = fake.phone_number()
+    email = fake.email()
+    language_preference = fake.random_element(["English", "Spanish", "Chinese", "French", "Arabic"])
+    socioeconomic_status = fake.random_element(["Low income", "Middle income", "High income"])
+    special_need = fake.random_element(["Wheelchair accessibility", "Vision impairment", "Hearing impairment"])
+
+    return (
+        first_name,
+        last_name,
+        gender,
+        ethnicity,
+        address,
+        city,
+        state,
+        zip_code,
+        phone,
+        email,
+        language_preference,
+        socioeconomic_status,
+        special_need
+    )
+
+# Connect to SQLite database
+conn = sqlite3.connect('health_equity.db')
+cursor = conn.cursor()
+
+# Create Patients table
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS Patients (
+        PatientID INTEGER PRIMARY KEY,
+        FirstName TEXT NOT NULL,
+        LastName TEXT NOT NULL,
+        Gender TEXT,
+        Ethnicity TEXT,
+        Address TEXT,
+        City TEXT,
+        State TEXT,
+        ZipCode TEXT,
+        Phone TEXT,
+        Email TEXT,
+        LanguagePreference TEXT,
+        SocioeconomicStatus TEXT,
+        SpecialNeeds TEXT
+    )
+''')
+
+# Insert 20 records into Patients table
+for _ in range(20):
+    data = generate_realistic_data()
+    cursor.execute("INSERT INTO Patients (FirstName, LastName, Gender, Ethnicity, Address, City, State, ZipCode, Phone, Email, LanguagePreference, SocioeconomicStatus, SpecialNeeds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+
+# Commit the changes
+conn.commit()
+
+# Close connection
+conn.close()

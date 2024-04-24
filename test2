@@ -1,127 +1,146 @@
-import sqlite3
-from faker import Faker
+import csv
+import tempfile
+import time
+import io
+from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain.prompts import PromptTemplate
+import os
+import streamlit as st
+import pandas as pd
+import json
+from sqlalchemy import create_engine
+from urllib.parse import quote
+import pandas as pd
+import pymysql
+from sqlalchemy import text
+from sdv.metadata import MultiTableMetadata
+if 'data' not in st.session_state:
+    st.session_state.data = None
+if 'meta' not in st.session_state:
+    st.session_state.meta = None
+st.title("Synthetic Data Generator Using Gen AI-Demo")
 
-fake = Faker()
+st.text ("powered by OpenAI")
 
-# Function to generate realistic data
-def generate_realistic_data():
-    first_name = fake.first_name()
-    last_name = fake.last_name()
-    gender = fake.random_element(["Male", "Female"])
-    ethnicity = fake.random_element(["White", "Black or African American", "Asian", "Hispanic or Latino", "Native American", "Other"])
-    address = fake.street_address()
-    city = fake.city()
-    state = fake.state_abbr()
-    zip_code = fake.zipcode()
-    phone = fake.phone_number()
-    email = fake.email()
-    language_preference = fake.random_element(["English", "Spanish", "Chinese", "French", "Arabic"])
-    socioeconomic_status = fake.random_element(["Low income", "Middle income", "High income"])
-    special_need = fake.random_element(["Wheelchair accessibility", "Vision impairment", "Hearing impairment"])
+user_option=st.radio("Select an option",["***Automatic***","***Manual***"],captions=["Retrieve information from database","Manually enter table details"],horizontal=True)
 
-    return (
-        first_name,
-        last_name,
-        gender,
-        ethnicity,
-        address,
-        city,
-        state,
-        zip_code,
-        phone,
-        email,
-        language_preference,
-        socioeconomic_status,
-        special_need
+#st.title('Synthetic Data Generation')
+os.environ['OPENAI_API_KEY'] = ''
+progress_text = "Fetching the data from database. Please wait."
+with st.container(border=True):
+    if(user_option=='***Manual***'):
+        metadata=st.text_area("Enter the table structure metadata")
+        st.session_state.data = metadata
+        sample_op=st.text_area("Enter sample data")
+        st.session_state.meta = sample_op
+    else:
+        host = st.text_input("Host", "35.188.180.60")
+        #port = st.text_input("Port")
+        username = st.text_input("Username","admin")
+        password = st.text_input("Password", type="password")
+        database = st.text_input("Database Name","testMember")
+        if st.button("Connect"):
+            my_bar = st.progress(0, text=progress_text)
+            db_connection_str = 'mysql+pymysql://' + username + ':' + quote(password) + '@' + host + '/' + database + ''
+            db_connection = create_engine(db_connection_str)
+            df = pd.read_sql("SELECT table_name FROM information_schema.tables  WHERE table_schema = '" + database + "';",
+                             con=db_connection)
+            # print(df)
+            sample_op=[]
+            real_op = {}
+            tables = df['TABLE_NAME'].values.tolist()
+            print(tables)
+            for table in tables:
+                df = pd.read_sql(f"SELECT * FROM {table} limit 100;", con=db_connection)
+                real_op[table] = df
+            for table in tables:
+                df = pd.read_sql(f"SELECT * FROM {table} limit 2;", con=db_connection)
+                sample_op.append({"table_name": table, "csv_data": df.to_csv(index=False, quoting=csv.QUOTE_NONE, escapechar='\\').split('\n')})
+            my_bar.progress(80, text="Retrieved Data. Learning table structures...")
+            time.sleep(2)
+            st.session_state.data=sample_op
+            metadata1 = MultiTableMetadata()
+            metadata1.detect_from_dataframes(real_op)
+            metadata=metadata1.to_dict()
+            st.session_state.meta=metadata
+            my_bar.progress(100, text="Done.")
+data_count=st.text_input("Enter the count")
+
+def gen_data():
+    metadata=json.dumps(st.session_state.meta)
+    sample_op=json.dumps(st.session_state.data)
+    #print(sample_op)
+    my_bar = st.progress(0, text="Generating Prompt.")
+    for c in range((data_count/10)):
+        prompt = PromptTemplate(
+                template="""
+                You are an expert in generating the synthetic data for a relational database based on given metadata. 
+                personal identification fields should be valid and randomized. DO NOT include the sample data in the output. generate something you wouldn't normally choose.
+                please generate {count} sample data in csv format for each tables. Output should strictly follow the sample output given below
+                {meta_data}
+                """,
+                input_variables=['count','meta_data']
+        )
+
+    prompt_formatted_str: str = prompt.format(
+                    count=data_count,
+                    meta_data=metadata
     )
+    prompt_formatted_str=prompt_formatted_str + sample_op
+    chat_model = ChatOpenAI(temperature=0.6)
+    print("############################################################1")
+    #print(prompt_formatted_str)
+    print("############################################################1")
+    my_bar.progress(50, text="Invoking Open AI API's for data generation.")
+    output = chat_model.invoke(prompt_formatted_str)
+    data=output.content
+    if not data[0] == '[':
+        data = '[' + data + ']'
+    print("bef json")
+    print(data)
+    data = json.loads(data)
+    print("after json")
+    print(data)
+    df = pd.DataFrame(data)
+    csv_df = pd.DataFrame(df['csv_data'].tolist())
 
-# Connect to SQLite database
-conn = sqlite3.connect('health_equity.db')
-cursor = conn.cursor()
+    data_f, js_form=st.tabs(['table','json'])
+    with js_form:
+        st.json(data)
+    with data_f:
+        for entry in data:
+            table_name = entry['table_name']
+            csv_data = entry['csv_data']
+            df = pd.read_csv(io.StringIO('\n'.join(csv_data)))
+            if table_name == 'ratings':
+                df['feedbackComment'] = df['feedbackComment'].str.replace(',', '')
+            st.text(f"Data for '{table_name}':")
+            st.dataframe(df)
 
-# Create Patients table
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Patients (
-        PatientID INTEGER PRIMARY KEY,
-        FirstName TEXT NOT NULL,
-        LastName TEXT NOT NULL,
-        Gender TEXT,
-        Ethnicity TEXT,
-        Address TEXT,
-        City TEXT,
-        State TEXT,
-        ZipCode TEXT,
-        Phone TEXT,
-        Email TEXT,
-        LanguagePreference TEXT,
-        SocioeconomicStatus TEXT,
-        SpecialNeeds TEXT
-    )
-''')
+    #st.dataframe(csv_df)
+    for entry in data:
+        for i, row in enumerate(entry['csv_data']):
+            if i != 0:  # Skip header row
+                entry['csv_data'][i] = row.replace('"', '')
 
-# Create HealthcareProviders table
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS HealthcareProviders (
-        ProviderID INTEGER PRIMARY KEY,
-        FirstName TEXT NOT NULL,
-        LastName TEXT NOT NULL,
-        Specialty TEXT,
-        HospitalAffiliation TEXT,
-        Address TEXT,
-        City TEXT,
-        State TEXT,
-        ZipCode TEXT,
-        Phone TEXT,
-        Email TEXT
-    )
-''')
+    # Function to convert csv_data to DataFrame
+    def csv_data_to_dataframe(csv_data):
+        header = csv_data[0].split(',')
+        rows = [row.split(',') for row in csv_data[1:]]
+        return pd.DataFrame(rows, columns=header)
+    # Creating DataFrames for each csv_data
+    dataframes = {entry['table_name']: csv_data_to_dataframe(entry['csv_data']) for entry in data}
+    my_bar.progress(100, text="Data Generated.")
+    return dataframes
 
-# Create Appointments table
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Appointments (
-        AppointmentID INTEGER PRIMARY KEY,
-        PatientID INTEGER,
-        ProviderID INTEGER,
-        AppointmentDate TEXT,
-        AppointmentTime TEXT,
-        Status TEXT,
-        FOREIGN KEY (PatientID) REFERENCES Patients(PatientID),
-        FOREIGN KEY (ProviderID) REFERENCES HealthcareProviders(ProviderID)
-    )
-''')
+#st.data_editor(pd.DataFrame(output_dict["prognosis"]["conditions"]),key="codn_reco")
 
-# Insert 20 records into Patients table
-for _ in range(20):
-    data = generate_realistic_data()
-    cursor.execute("INSERT INTO Patients (FirstName, LastName, Gender, Ethnicity, Address, City, State, ZipCode, Phone, Email, LanguagePreference, SocioeconomicStatus, SpecialNeeds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
-
-# Insert 20 records into HealthcareProviders table
-for _ in range(20):
-    first_name = fake.first_name()
-    last_name = fake.last_name()
-    specialty = fake.random_element(["Cardiology", "Pediatrics", "Orthopedics", "Dermatology", "Ophthalmology", "Neurology"])
-    hospital_affiliation = fake.random_element(["General Hospital", "Children's Hospital", "University Hospital", "Specialty Clinic"])
-    address = fake.street_address()
-    city = fake.city()
-    state = fake.state_abbr()
-    zip_code = fake.zipcode()
-    phone = fake.phone_number()
-    email = fake.email()
-    cursor.execute("INSERT INTO HealthcareProviders (FirstName, LastName, Specialty, HospitalAffiliation, Address, City, State, ZipCode, Phone, Email) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                   (first_name, last_name, specialty, hospital_affiliation, address, city, state, zip_code, phone, email))
-
-# Insert 20 records into Appointments table
-for _ in range(20):
-    patient_id = fake.random_int(min=1, max=20)
-    provider_id = fake.random_int(min=1, max=20)
-    appointment_date = fake.date_this_year().strftime('%Y-%m-%d')
-    appointment_time = fake.time(pattern='%H:%M')
-    status = fake.random_element(["Scheduled", "Canceled", "Completed"])
-    cursor.execute("INSERT INTO Appointments (PatientID, ProviderID, AppointmentDate, AppointmentTime, Status) VALUES (?, ?, ?, ?, ?)",
-                   (patient_id, provider_id, appointment_date, appointment_time, status))
-
-# Commit the changes
-conn.commit()
-
-# Close connection
-conn.close()
+if st.button("Generate Synthetic Data"):
+    dfs = gen_data()
+    # tab_names = list(dfs.keys())
+    # tabs = st.tabs(tab_names)
+    # for i, (table_name, df) in enumerate(dfs.items(), start=0):
+    #     with tabs[i]:
+    #         st.write(f"{table_name.capitalize()} Data:")
+    #         st.dataframe(df)

@@ -32,3 +32,6 @@ st.write("- v1.1: Improved model training performance.")
 
 # Footer
 st.write("© 2024 Synthetic Data Generator App | [Privacy Policy](#) | [Terms of Service](#)")
+
+st.warning("**Important:** This app processes and stores sensitive user information. By using this app, you agree to share your data and acknowledge that you have read and understood our [Privacy Policy](#) and [Terms of Service](#).")
+

@@ -1,0 +1,48 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from influxdb_client import InfluxDBClient, Point, Dialect
+
+# Set up InfluxDB connection details
+INFLUXDB_URL = "http://localhost:8086"  # Update with your InfluxDB URL
+INFLUXDB_TOKEN = "your-influxdb-token"  # Replace with your InfluxDB token
+INFLUXDB_ORG = "your-org"               # Replace with your organization name
+INFLUXDB_BUCKET = "your-bucket"         # Replace with your bucket name
+
+# Function to fetch data from InfluxDB
+def fetch_data_from_influxdb(start_time="-1h"):
+    with InfluxDBClient(url=INFLUXDB_URL, token=INFLUXDB_TOKEN, org=INFLUXDB_ORG) as client:
+        query_api = client.query_api()
+
+        # Query to fetch data - replace `measurement`, `field`, and `time range` as needed
+        query = f'''
+        from(bucket: "{INFLUXDB_BUCKET}")
+        |> range(start: {start_time})
+        |> filter(fn: (r) => r._measurement == "your_measurement_name" and r._field == "your_field_name")
+        |> keep(columns: ["_time", "_value"])
+        '''
+        
+        # Execute the query and return as Pandas DataFrame
+        result = query_api.query_data_frame(query)
+        
+        # Check if data is available
+        if result.empty:
+            st.warning("No data available for the specified time range.")
+            return pd.DataFrame()
+        
+        # Rename columns for easier plotting
+        result = result.rename(columns={"_time": "Time", "_value": "Value"})
+        return result.set_index("Time")
+
+# Streamlit UI
+st.title("Time Series Data from InfluxDB")
+
+# Fetch data
+time_range = st.sidebar.selectbox("Select time range", ["-1h", "-6h", "-12h", "-24h"])
+data = fetch_data_from_influxdb(start_time=time_range)
+
+# Plot the data if available
+if not data.empty:
+    st.line_chart(data["Value"])  # Plot directly in Streamlit
+else:
+    st.write("No data to display.")

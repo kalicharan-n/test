@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Generate Random Data</h1>
+
+<form method="POST" action="/">
+    <div class="field">
+        <label class="label">Number of Records</label>
+        <div class="control">
+            <input class="input" type="number" name="num_records" min="1" value="{{ num_records }}" required>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Select Layout</label>
+        <div class="control">
+            <div class="select">
+                <select name="layout" required>
+                    {% for layout in layouts %}
+                        <option value="{{ layout }}" {% if layout == request.form.get('layout') %}selected{% endif %}>{{ layout }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="control">
+        <button type="submit" class="button is-primary">Generate</button>
+    </div>
+</form>
+
+{% if generated_data %}
+    <h2 class="title is-4">Generated Data</h2>
+    <pre id="generated_data">{{ generated_data | join("\n\n") }}</pre>
+
+    <!-- Download Dropdown and Button -->
+    <div class="field">
+        <label class="label">Download as</label>
+        <div class="control">
+            <div class="select">
+                <select id="download_option">
+                    <option value="full">Full File</option>
+                    <option value="separate">Separate Files</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" onclick="downloadData()" class="button is-link">Download</button>
+    </div>
+
+    <!-- Copy to Clipboard Button -->
+    <div class="control">
+        <button type="button" onclick="copyToClipboard()" class="button is-light">Copy to Clipboard</button>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Copy generated data to clipboard
+    function copyToClipboard() {
+        const generatedData = document.getElementById('generated_data').textContent;
+        navigator.clipboard.writeText(generatedData).then(() => {
+            alert('Data copied to clipboard');
+        });
+    }
+
+    // Download generated data based on selection
+    function downloadData() {
+        const downloadOption = document.getElementById('download_option').value;
+        const generatedData = document.getElementById('generated_data').textContent.split('\n\n');
+
+        if (downloadOption === 'full') {
+            // Download as a single file
+            const blob = new Blob([generatedData.join('\n\n')], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'generated_data.txt';
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link); // Clean up
+        } else if (downloadOption === 'separate') {
+            // Download each record as a separate file
+            generatedData.forEach((data, index) => {
+                const blob = new Blob([data], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `generated_data_${index + 1}.txt`;
+                document.body.appendChild(link); // Required for Firefox
+                link.click();
+                document.body.removeChild(link); // Clean up after each download
+            });
+        }
+    }
+</script>
+{% endblock %}

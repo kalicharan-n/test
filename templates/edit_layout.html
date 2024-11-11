@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Edit Layout - {{ filename }}</h1>
+<form method="POST">
+    <div class="field">
+        <textarea class="textarea" name="content" rows="10">{{ content }}</textarea>
+    </div>
+    <button type="submit" class="button is-primary">Save</button>
+</form>
+{% endblock %}

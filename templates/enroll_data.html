@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Enroll Data</h1>
+
+<form method="POST" action="/enroll_data">
+    <div class="field">
+        <label class="label">Contract</label>
+        <div class="control">
+            <input type="text" name="contract" class="input" placeholder="Enter contract">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Subc</label>
+        <div class="control">
+            <input type="text" name="subc" class="input" placeholder="Enter subc">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Effective Date</label>
+        <div class="control">
+            <input type="date" name="effective_date" class="input">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">State</label>
+        <div class="control">
+            <input type="text" name="state" class="input" placeholder="Enter state">
+        </div>
+    </div>
+
+    <div class="control">
+        <button type="submit" class="button is-primary">Submit Enrollment Data</button>
+    </div>
+</form>
+{% endblock %}

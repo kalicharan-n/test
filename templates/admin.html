@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Admin Panel</h1>
+
+<form method="POST" action="/admin">
+    <div class="field">
+        <label class="label">Select ID Field</label>
+        <div class="control">
+            <div class="select">
+                <select name="id_field" required>
+                    {% for id_field in id_fields %}
+                        <option value="{{ id_field }}" {% if id_field == request.form.get('id_field') %}selected{% endif %}>
+                            {{ id_field }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Action</label>
+        <div class="control">
+            <div class="select">
+                <select name="reset_type" id="reset_type" required>
+                    <option value="reset" {% if request.form.get('reset_type') == 'reset' %}selected{% endif %}>Reset ID</option>
+                    <option value="increment" {% if request.form.get('reset_type') == 'increment' %}selected{% endif %}>Increment ID</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input box for new ID when "Reset ID" is selected -->
+    <div id="new_id_container" class="field hidden">
+        <label class="label">Enter New ID</label>
+        <div class="control">
+            <input type="number" name="new_id" id="new_id" class="input" placeholder="Enter new ID value" required>
+        </div>
+    </div>
+
+    <div class="control">
+        <button type="submit" class="button is-primary">Update ID</button>
+    </div>
+</form>
+
+<h2 class="title is-4">Current ID Value: {{ current_id }}</h2>
+
+{% endblock %}
+
+<script>
+    // JavaScript to toggle visibility of new ID input field based on reset_type
+    const resetTypeSelect = document.getElementById('reset_type');
+    const newIdContainer = document.getElementById('new_id_container');
+
+    resetTypeSelect.addEventListener('change', function () {
+        if (this.value === 'reset') {
+            newIdContainer.classList.remove('hidden');  // Show the new ID input box
+        } else {
+            newIdContainer.classList.add('hidden');  // Hide the new ID input box
+        }
+    });
+
+    // Initial visibility based on the selected action when the page is loaded
+    if (resetTypeSelect.value === 'reset') {
+        newIdContainer.classList.remove('hidden');
+    } else {
+        newIdContainer.classList.add('hidden');
+    }
+</script>
+

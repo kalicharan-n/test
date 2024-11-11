@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Edit Layout - {{ filename }}</h1>
+<form method="POST">
+    <div class="field">
+        <label class="label">Edit Layout Content</label>
+        <div class="control is-flex">
+            <!-- Layout Content Section -->
+            <div class="control" style="flex: 1; margin-right: 20px;">
+                <textarea class="textarea" name="content" id="layout_content" rows="10">{{ content }}</textarea>
+            </div>
+
+            <!-- Add Placeholder Section -->
+            <div class="control" style="flex: 0.5;">
+                <label class="label">Add Placeholder</label>
+                <div class="field has-addons">
+                    <div class="control">
+                        <div class="select">
+                            <select id="placeholder_select">
+                                {% for placeholder in placeholders %}
+                                    <option value="{{ placeholder }}">{{ placeholder }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <button type="button" class="button is-link" onclick="addPlaceholder()">Add</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="button is-primary">Save</button>
+</form>
+
+<script>
+    function addPlaceholder() {
+        const placeholder = document.getElementById('placeholder_select').value;
+        const contentBox = document.getElementById('layout_content');
+        const cursorPosition = contentBox.selectionStart;
+        const placeholderText = `{${placeholder}}`;
+
+        // Insert the placeholder at the cursor position
+        const beforeText = contentBox.value.substring(0, cursorPosition);
+        const afterText = contentBox.value.substring(cursorPosition);
+
+        contentBox.value = beforeText + placeholderText + afterText;
+
+        // Set cursor position after the newly inserted placeholder
+        contentBox.selectionStart = contentBox.selectionEnd = cursorPosition + placeholderText.length;
+
+        // Focus back on the text area
+        contentBox.focus();
+    }
+</script>
+{% endblock %}

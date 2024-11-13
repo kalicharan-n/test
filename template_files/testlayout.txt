@@ -1,0 +1,4 @@
+ID|Identifier|{incrementing_id}
+ADDRESS|Home|{street_address}
+NAME|First Name|{first_name}
+COUNTY|{healthplan_city}|{healthplan_zip}|{healthplan_county}|{healthplan_state}

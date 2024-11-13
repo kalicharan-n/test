@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Enroll Data</h1>
+
+<form method="POST" action="/enroll_data">
+    <div class="field">
+        <label class="label">Contract</label>
+        <div class="control">
+            <div class="select">
+                <select name="contract" id="contract" onchange="loadSubPlans()">
+                    <option value="">Select a contract</option>
+                    {% for contract in contracts %}
+                        <option value="{{ contract[0] }}">{{ contract[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Subc</label>
+        <div class="control">
+            <div class="select">
+                <select name="subc" id="subc">
+                    <option value="">Select a sub plan</option>
+                    <!-- Sub plan options will be populated here based on contract selection -->
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Effective Date</label>
+        <div class="control">
+            <input type="date" name="effective_date" class="input">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">State</label>
+        <div class="control">
+            <input type="text" name="state" class="input" placeholder="Enter state">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Number of Records</label>
+        <div class="control">
+            <input class="input" type="number" name="num_records" min="1" value="{{ num_records }}" required>
+        </div>
+    </div>
+
+
+    <div class="control">
+        <button type="submit" class="button is-primary">Submit Enrollment Data</button>
+    </div>
+</form>
+
+{% if generated_data %}
+    
+    <!-- Download Dropdown and Button -->
+    <div class="field">
+        <div class="control">
+        
+        <label class="label">Generated Data</label>
+            <div class="select">
+                <select id="download_option">
+                    <option value="full">Single File</option>
+                    <option value="separate">Separate Files</option>
+                </select>
+            </div>
+            <button type="button" onclick="downloadData()" class="button is-link">Download</button>
+            <button type="button" onclick="copyToClipboard()" class="button is-light">Copy to Clipboard</button>
+   
+        </div>
+        
+    </div>
+
+    
+    <textarea id="generated_data" style="width: 100%; height: 300px;">{{ generated_data | join("\n\n") }}</textarea>
+
+{% endif %}
+
+<script>
+    // Function to load Sub Plan IDs based on selected Contract (Plan ID)
+    function loadSubPlans() {
+        var contract = document.getElementById("contract").value;  // Get selected plan_id
+        var subPlanSelect = document.getElementById("subc");  // Get the sub plan dropdown
+        
+        // Clear existing options in sub plan dropdown
+        subPlanSelect.innerHTML = '<option value="">Select a sub plan</option>';
+        
+        if (contract) {
+            // Make AJAX request to fetch sub plans
+            fetch(`/get_sub_plan_ids?plan_id=${contract}`)
+                .then(response => response.json())
+                .then(subPlans => {
+                    // Populate sub plan dropdown with fetched sub_plan_ids
+                    subPlans.forEach(subPlan => {
+                        var option = document.createElement("option");
+                        option.value = subPlan;
+                        option.textContent = subPlan;
+                        subPlanSelect.appendChild(option);
+                    });
+                });
+        }
+    }
+</script>
+
+
+{% endblock %}

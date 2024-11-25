@@ -1,0 +1,58 @@
+import requests
+
+# Set up your Performance Center (LoadRunner) API credentials
+pc_base_url = 'https://your_pc_server.com'
+username = 'your_username'
+password = 'your_password'
+
+# Login to the API
+auth_url = f'{pc_base_url}/api/authentication'
+auth_payload = {'username': username, 'password': password}
+auth_response = requests.post(auth_url, json=auth_payload)
+
+if auth_response.status_code == 200:
+    session_token = auth_response.json()['token']
+else:
+    print("Authentication failed")
+    exit()
+
+# Fetch metrics (e.g., load test results)
+metrics_url = f'{pc_base_url}/api/results'
+headers = {'Authorization': f'Bearer {session_token}'}
+metrics_response = requests.get(metrics_url, headers=headers)
+
+if metrics_response.status_code == 200:
+    metrics_data = metrics_response.json()
+else:
+    print("Failed to fetch metrics")
+    exit()
+
+# Process and extract the relevant metrics data
+print(metrics_data)  # Example of displaying the data
+
+
+
+
+
+from influxdb import InfluxDBClient
+
+# InfluxDB connection
+influx_client = InfluxDBClient(host='localhost', port=8086, database='performance_metrics')
+
+# Create the data point in InfluxDB format
+influx_data = [
+    {
+        "measurement": "loadrunner_metrics",
+        "tags": {
+            "test_name": "Test_1",
+            "server": "server1"
+        },
+        "fields": {
+            "response_time": metrics_data['response_time'],
+            "throughput": metrics_data['throughput']
+        }
+    }
+]
+
+# Write data to InfluxDB
+influx_client.write_points(influx_data)

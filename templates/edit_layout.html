@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Edit Layout - {{ filename }}</h1>
+<form method="POST">
+    <div class="field">
+        <label class="label">Edit Layout Content</label>
+        <div class="control is-flex">
+            <!-- Layout Content Section -->
+            <div class="control" style="flex: 1; margin-right: 20px;">
+                <textarea class="textarea" name="content" id="layout_content" rows="10">{{ content }}</textarea>
+            </div>
+
+            <!-- Add Placeholder Section -->
+            <div class="control" style="flex: 0.5;">
+                <label class="label">Add Placeholder</label>
+                <div class="field has-addons">
+                    <div class="control">
+                        <div class="select">
+                            <select id="placeholder_select" onchange="showExample()">
+                                <option value="" disabled selected>Select a placeholder</option>
+                                {% for name, details in placeholders.items() %}
+                                    <option value="{{ name }}" data-example="{{ details.example }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <button type="button" class="button is-link" onclick="addPlaceholder()">Add</button>
+                    </div>
+                </div>
+
+                <!-- Placeholder Example Display -->
+                <p id="example_text" class="help" style="margin-top: 10px;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button type="submit" class="button is-primary">Save</button>
+        <a href="{{ url_for('layouts') }}" class="button is-light">Cancel</a>
+    </div>
+</form>
+
+<script>
+    function showExample() {
+        const select = document.getElementById('placeholder_select');
+        const exampleText = document.getElementById('example_text');
+        const selectedOption = select.options[select.selectedIndex];
+        const example = selectedOption.getAttribute('data-example');
+        
+        // Display the example below the dropdown
+        exampleText.textContent = example ? `Example: ${example}` : '';
+    }
+
+    function addPlaceholder() {
+        const placeholder = document.getElementById('placeholder_select').value;
+        const contentBox = document.getElementById('layout_content');
+        const cursorPosition = contentBox.selectionStart;
+        const placeholderText = `{${placeholder}}`;
+
+        // Insert the placeholder at the cursor position
+        const beforeText = contentBox.value.substring(0, cursorPosition);
+        const afterText = contentBox.value.substring(cursorPosition);
+
+        contentBox.value = beforeText + placeholderText + afterText;
+
+        // Set cursor position after the newly inserted placeholder
+        contentBox.selectionStart = contentBox.selectionEnd = cursorPosition + placeholderText.length;
+
+        // Focus back on the text area
+        contentBox.focus();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">Admin Panel</h1>
+<div class="box">
+<form method="POST" action="/admin">
+            <div class="field">
+            <label class="label">Select ID Field</label>
+            <div class="control">
+                <div class="select">
+                    <select name="id_field" required>
+                        {% for id_field in id_fields %}
+                            <option value="{{ id_field }}" {% if id_field == request.form.get('id_field') %}selected{% endif %}>
+                                {{ id_field }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Enter New ID</label>
+            <div class="control">
+                <input type="number" name="new_id" id="new_id" class="input" placeholder="Enter new ID value" value="{{ current_id }}" required>
+            </div>
+        </div>
+
+        <div class="control">
+            <button type="submit" class="button is-primary">Update ID</button>
+        </div>
+    </form>
+
+    <h2 class="title is-4">Current ID Value: {{ current_id }}</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <script>
+            {% for category, message in messages %}
+                alert("{{ message }}");
+            {% endfor %}
+        </script>
+    {% endif %}
+    {% endwith %}
+</div>
+
+<!-- New section with Contract and Subc fields -->
+<div class="box">
+    <h2 class="title is-5">Fetch Data</h2>
+    <form method="POST" action="/fetch">
+        <div class="field">
+            <label class="label">Contract</label>
+            <div class="control">
+                <input type="text" name="contract" class="input" placeholder="Enter contract">
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Subc</label>
+            <div class="control">
+                <input type="text" name="subc" class="input" placeholder="Enter subc">
+            </div>
+        </div>
+
+        <div class="control">
+            <button type="submit" class="button is-info">Fetch</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+

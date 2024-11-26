@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <style>
+        /* Navbar Styles */
+    .navbar {
+        background-color: #004080; /* Dark blue background */
+    }
+    .navbar-brand .title {
+        color: #ffffff; /* White title text */
+        font-weight: bold;
+        font-size: 24px;
+    }
+    .navbar-item,
+    .navbar-link {
+        color: #ffffff !important; /* White text for all navbar items */
+    }
+    .navbar-item:hover,
+    .navbar-link:hover {
+        background-color: #0059b3 !important; /* Light blue background on hover */
+        color: #ffffff !important; /* Ensure text stays white */
+    }
+    /* Active Dropdown Link (Tools) */
+    .navbar-link.is-active,
+    .navbar-link.is-active:hover {
+        background-color: #004080 !important; /* Keep dark blue background for Tools */
+        color: #ffffff !important; /* Ensure text stays white */
+    }
+    /* Keep the background dark blue when hovering over the Tools link */
+    .navbar-item.has-dropdown.is-hoverable .navbar-link:hover {
+        background-color: #004080 !important; /* Dark blue background stays */
+        color: #ffffff !important; /* Keep the text white */
+    }
+    /* Dropdown Menu Styles */
+    .navbar-dropdown {
+        background-color: #004080; /* Dark blue dropdown background */
+    }
+    .navbar-dropdown .navbar-item {
+        color: #ffffff !important; /* White text for dropdown items */
+    }
+    .navbar-dropdown .navbar-item:hover {
+        background-color: #0059b3 !important; /* Light blue background for dropdown items on hover */
+        color: #ffffff !important; /* Ensure dropdown text stays white */
+    }
+        .progress {
+            margin-top: 10px;
+            height: 20px;
+            border-radius: 5px;
+        }
+        
+        #progressPercentage {
+            position: absolute;
+            right: 10px; /* Adjust spacing from the end of the progress bar */
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1em;
+            color: #4a4a4a; /* Adjust text color as needed */
+        }
+        
+        
+        
+    </style>
+</head>
+<body>
+    <nav class="navbar is-spaced" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <span class="title navbar-item">Data Generator</span>
+        </div>
+        <div class="navbar-menu">
+            <div class="navbar-start">
+                <a href="/" class="navbar-item">Home</a>
+                <a href="/enroll_data" class="navbar-item">Enroll Data</a>
+                <a href="/layouts" class="navbar-item">Layouts</a>
+                <a href="/admin" class="navbar-item">Admin</a>
+                <!-- Dropdown Menu -->
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        Tools
+                    </a>
+                    <div class="navbar-dropdown">
+                        <a href="/system_settings" class="navbar-item">System Settings</a>
+                        <a href="/data_search" class="navbar-item">Data Search</a>
+                    </div>
+                </div>  
+            </div>
+        </div>
+    </nav>
+
+    <div class="section">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

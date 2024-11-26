@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="title">System Settings</h1>
+
+<!-- Add or Update Service -->
+<div class="box">
+    <h2 class="title is-5">Add or Update Service</h2>
+    <form method="POST" action="/system_settings/add_or_update_service" id="serviceForm">
+        <div class="field">
+            <label class="label">Service Name</label>
+            <div class="control">
+                <input type="text" name="service_name" class="input" id="service_name" placeholder="Enter service name" required>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Host</label>
+            <div class="control">
+                <input type="text" name="host" class="input" id="host" placeholder="Enter host (e.g., 127.0.0.1)">
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Port</label>
+            <div class="control">
+                <input type="text" name="port" class="input" id="port" placeholder="Enter port (e.g., 3306)">
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Username</label>
+            <div class="control">
+                <input type="text" name="username" class="input" id="username" placeholder="Enter username">
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Password</label>
+            <div class="control">
+                <input type="password" name="password" class="input" id="password" placeholder="Enter password">
+                <p class="help">Leave blank to keep the current password.</p>
+            </div>
+        </div>
+        <!-- Hidden field to check if form is in edit mode -->
+        <input type="hidden" name="edit_mode" id="edit_mode" value="false">
+
+        <div class="control">
+            <button type="submit" class="button is-primary">Save Configuration</button>
+            <button type="reset" class="button is-light" id="resetButton">Reset</button>
+        </div>
+    </form>
+</div>
+
+<!-- Existing Services -->
+<div class="box">
+    <h2 class="title is-5">Existing Services</h2>
+    <table class="table is-striped is-fullwidth">
+        <thead>
+            <tr>
+                <th>Service Name</th>
+                <th>Details</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for service_name, parameters in services.items() %}
+            <tr>
+                <td>{{ service_name }}</td>
+                <td>
+                    <ul>
+                        {% for key, value in parameters.items() %}
+                        <li><strong>{{ key }}:</strong> {{ value if key != 'password' else '*****' }}</li>
+                        {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <button class="button is-warning is-small edit-button" 
+                            data-service-name="{{ service_name }}"
+                            data-parameters='{{ parameters | tojson }}'>
+                        Edit
+                    </button>
+                    <form method="POST" action="/system_settings/delete_service" style="display:inline;">
+                        <input type="hidden" name="service_name" value="{{ service_name }}">
+                        <button type="submit" class="button is-danger is-small">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    <script>
+        {% for category, message in messages %}
+            alert("{{ message }}");
+        {% endfor %}
+    </script>
+{% endif %}
+{% endwith %}
+
+<!-- JavaScript for Edit Functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const editButtons = document.querySelectorAll('.edit-button');
+        const serviceForm = document.getElementById('serviceForm');
+        const resetButton = document.getElementById('resetButton');
+
+        // Handle Edit Button Click
+        editButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const serviceName = button.getAttribute('data-service-name');
+                const parameters = JSON.parse(button.getAttribute('data-parameters'));
+
+                // Populate the form fields
+                document.getElementById('service_name').value = serviceName;
+                document.getElementById('host').value = parameters.host || '';
+                document.getElementById('port').value = parameters.port || '';
+                document.getElementById('username').value = parameters.username || '';
+                document.getElementById('password').value = ''; // Keep password blank for security reasons
+
+                // Add additional dynamic fields
+                for (const key in parameters) {
+                    if (!['host', 'port', 'username', 'password'].includes(key)) {
+                        let inputField = document.querySelector(`input[name="${key}"]`);
+                        if (!inputField) {
+                            const fieldDiv = document.createElement('div');
+                            fieldDiv.classList.add('field');
+                            fieldDiv.innerHTML = `
+                                <label class="label">${key}</label>
+                                <div class="control">
+                                    <input type="text" name="${key}" class="input" placeholder="Enter ${key}" value="${parameters[key]}">
+                                </div>`;
+                            serviceForm.insertBefore(fieldDiv, resetButton);
+                        } else {
+                            inputField.value = parameters[key];
+                        }
+                    }
+                }
+
+                // Set form to edit mode
+                document.getElementById('edit_mode').value = 'true';
+            });
+        });
+
+        // Reset Button Click
+        resetButton.addEventListener('click', () => {
+            document.getElementById('edit_mode').value = 'false';
+        });
+    });
+</script>
+
+{% endblock %}

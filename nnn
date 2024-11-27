@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Generator - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <style>
+        /* Custom styles for landing page */
+        .hero {
+            background-color: #004080;
+            color: #ffffff;
+        }
+        .hero .title {
+            font-weight: bold;
+            font-size: 36px;
+        }
+        .hero .subtitle {
+            font-size: 18px;
+            color: #d9d9d9;
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar is-spaced" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <span class="title navbar-item">Data Generator</span>
+        </div>
+        <div class="navbar-menu">
+            <div class="navbar-start">
+                <a href="/" class="navbar-item">Home</a>
+                <a href="/enroll_data" class="navbar-item">Enroll Data</a>
+                <a href="/layouts" class="navbar-item">Layouts</a>
+                <a href="/admin" class="navbar-item">Admin</a>
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">Tools</a>
+                    <div class="navbar-dropdown">
+                        <a href="/system_settings" class="navbar-item">System Settings</a>
+                        <a href="/data_search" class="navbar-item">Data Search</a>
+                    </div>
+                </div>  
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero is-medium">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">Welcome to the Data Generator</h1>
+                <p class="subtitle">Generate, manage, and explore your data with ease. Use the navigation below to get started.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="box">
+        <h2 class="title is-5">Quick Stats</h2>
+        <div class="columns">
+            <div class="column">
+                <div class="notification is-primary">
+                    <p class="title">25</p>
+                    <p class="subtitle">Templates Created</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="notification is-link">
+                    <p class="title">10,000</p>
+                    <p class="subtitle">Datasets Generated</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="notification is-info">
+                    <p class="title">5</p>
+                    <p class="subtitle">Active Users</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="box">
+        <h2 class="title is-5">Recent Activity</h2>
+        <ul>
+            <li>✔️ Template "Employee Data" created on Nov 20, 2024.</li>
+            <li>📂 Dataset "Client Records" generated on Nov 19, 2024.</li>
+            <li>🔧 Admin settings updated by John on Nov 18, 2024.</li>
+        </ul>
+    </div>
+    
+    <div class="box has-text-centered">
+        <h2 class="title is-5">Get Started Quickly</h2>
+        <a href="/enroll_data" class="button is-primary is-large">Generate Data Now</a>
+        <a href="/layouts" class="button is-link is-large">Create a Template</a>
+    </div>
+    
+    <div class="box">
+        <h2 class="title is-5">Need Help?</h2>
+        <ul>
+            <li><a href="/docs">📖 Documentation</a></li>
+            <li><a href="/faq">❓ Frequently Asked Questions</a></li>
+            <li><a href="/contact">📩 Contact Support</a></li>
+        </ul>
+    </div>
+    
+
+
+    <section class="section">
+        <div class="container">
+            <div class="columns is-multiline">
+                <!-- Card 1 -->
+                <div class="column is-one-quarter">
+                    <a href="/enroll_data">
+                        <div class="card">
+                            <div class="card-content">
+                                <p class="title">Enrollment Data</p>
+                                <p class="subtitle">Generate and manage enrollment data efficiently.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- Card 2 -->
+                <div class="column is-one-quarter">
+                    <a href="/layouts">
+                        <div class="card">
+                            <div class="card-content">
+                                <p class="title">Layouts</p>
+                                <p class="subtitle">Design and customize data templates for generation.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- Card 3 -->
+                <div class="column is-one-quarter">
+                    <a href="/admin">
+                        <div class="card">
+                            <div class="card-content">
+                                <p class="title">Admin Settings</p>
+                                <p class="subtitle">Configure system settings and user management.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- Card 4 -->
+                <div class="column is-one-quarter">
+                    <a href="/data_search">
+                        <div class="card">
+                            <div class="card-content">
+                                <p class="title">Data Search</p>
+                                <p class="subtitle">Search and analyze existing data records.</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="box">
+        <h2 class="title is-5">What Our Users Say</h2>
+        <blockquote>
+            "The Data Generator has saved us countless hours in data preparation!"
+            <br><small>— Jane Doe, Data Analyst</small>
+        </blockquote>
+    </div>
+    
+</body>
+</html>
